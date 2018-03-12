@@ -2,6 +2,7 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.io import loadmat
 from math import sqrt
+import random
 
 
 def initializeWeights(n_in, n_out):
@@ -55,6 +56,7 @@ def preprocess():
      - normalize the data to [0, 1]
      - divide the original data set to training, validation and testing set"""
 
+    n_valid = 5000
     mat = loadmat('mnist_all.mat') #loads the MAT object as a Dictionary
     train_data = np.concatenate((mat['train0'], mat['train1'],
                                  mat['train2'], mat['train3'],
@@ -88,13 +90,31 @@ def preprocess():
                                 mat['test8'], mat['test9']), 0)
 
     # remove features that have same value for all points in the training data
+    #train_data = np.all(train_data == train_data[,], axis = 0)
+    dup = np.invert(np.all(train_data == train_data[0,:], axis=0))
+    train_data = train_data[:,dup]
+    dup = np.invert(np.all(test_data  == test_data[0,:],  axis=0))
+    test_data  =  test_data[:,dup]
     # convert data to double
     # normalize data to [0,1]
+    train_data  = np.divide(train_data,  255.)
+    train_label = np.divide(train_label, 255.)
+    test_data   = np.divide(test_data,   255.)
+    test_label  = np.divide(test_label,  255.)
     
     # Split train_data and train_label into train_data, validation_data and train_label, validation_label
     # replace the next two lines
-    validation_data = np.array([])
-    validation_label = np.array([])
+    percent = 60000 * .15
+
+    np.random.shuffle(train_data)
+    sub = np.split(train_data, [percent, 60000])
+    train_data      = sub[0]
+    validation_data = sub[1]
+
+    np.random.shuffle(train_label)
+    sub = np.split(train_label, [percent, 60000])
+    train_label      = sub[0]
+    validation_label = sub[1]
 
 
     print("preprocess done!")
